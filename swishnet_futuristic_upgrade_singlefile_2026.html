@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S-wishNET Futuristic Upgrade</title>
+<style>
+:root{--bg:#060816;--glass:rgba(255,255,255,.08);--line:rgba(0,255,255,.18);--accent:#00e5ff;--accent2:#7c4dff;--text:#eef7ff}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,sans-serif;background:radial-gradient(circle at top,#0c1228,#060816 55%,#02030a);color:var(--text);min-height:100vh;overflow:hidden}
+body:before{content:'';position:fixed;inset:0;background:linear-gradient(120deg,transparent 0%,rgba(0,229,255,.05) 35%,transparent 70%);animation:scan 8s linear infinite}
+@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.container{width:min(420px,92vw);margin:4vh auto;position:relative;z-index:1}.page{display:none;padding:24px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(16px);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.45)}.active{display:block;animation:fade .35s ease}@keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+input,button,select{width:100%;padding:12px 14px;border-radius:14px;border:none;margin:8px 0}input,select{background:rgba(255,255,255,.08);color:white}button{background:linear-gradient(90deg,var(--accent),var(--accent2));font-weight:700;cursor:pointer;color:#031018;box-shadow:0 0 18px rgba(0,229,255,.35)}button:hover{transform:translateY(-1px)}
+.back{width:auto;padding:8px 12px}.grid{display:grid;gap:10px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.card{padding:10px;border-radius:14px;background:rgba(255,255,255,.05);font-size:12px;text-align:center}
+#chatBox{height:220px;overflow:auto;background:#02050d;border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,.08)} .msg{padding:8px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.06)} .bot{border-left:3px solid var(--accent)}
+.small{font-size:12px;opacity:.7}.badge{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(0,229,255,.12);font-size:12px}
+</style>
+</head>
+<body>
+<div class="container">
+<div id="login" class="page active">
+<h2>S-wishNET <span class="badge" id="themeClock"></span></h2>
+<input id="loginEmail" placeholder="Email"><input id="loginPass" type="password" placeholder="Password">
+<button onclick="login()">Login</button><button onclick="show('signup')">Create Account</button>
+</div>
+<div id="signup" class="page"><button class="back" onclick="show('login')">← Back</button><h2>Join Network</h2><input id="signEmail" placeholder="Email"><input id="signPass" placeholder="Password" type="password"><button onclick="signup()">Register</button></div>
+<div id="select" class="page"><button class="back" onclick="logout()">← Logout</button><h3 id="welcome"></h3><div class="stats"><div class="card"><div id="status">Inactive</div><div class="small">Status</div></div><div class="card"><div id="expiry">--</div><div class="small">Expiry</div></div><div class="card"><div id="msgCount">0</div><div class="small">Messages</div></div></div><div class="grid"><button onclick="show('chat')">AI Chat</button><button onclick="show('files');renderFiles()">Vault Files</button><button onclick="generateTrial()">1-Day Trial</button><button onclick="toggleTheme()">Toggle Neon Theme</button></div></div>
+<div id="chat" class="page"><button class="back" onclick="show('select')">← Back</button><h3>Smart Assistant</h3><div id="chatBox"></div><input id="msg" placeholder="Ask anything..."><button onclick="sendMsg()">Send</button></div>
+<div id="files" class="page"><button class="back" onclick="show('select')">← Back</button><h3>Download Vault</h3><div id="fileList"></div></div>
+</div>
+<script>
+const ADMIN_EMAIL='admin@swishnet.com',ADMIN_PASS='Admin123!'; let currentUser=null;
+const botReplies=['Access verified.','Neural link stable.','Request processed.','Future systems online.'];
+function users(){return JSON.parse(localStorage.getItem('users')||'{}')} function save(u){localStorage.setItem('users',JSON.stringify(u))}
+function show(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active'); if(id==='chat') loadChat(); if(id==='select') dashboard();}
+function signup(){const e=signEmail.value.trim(),p=signPass.value.trim(); let u=users(); if(!e||!p) return alert('Fill all fields'); if(u[e]) return alert('Exists'); u[e]={password:p,trialExpire:null,chatHistory:[],files:[{name:'Starter Kit',link:'#'}]}; save(u); show('login');}
+function login(){const e=loginEmail.value.trim(),p=loginPass.value.trim(); let u=users(); if(e===ADMIN_EMAIL&&p===ADMIN_PASS)return alert('Admin mode can be extended next'); if(!u[e]||u[e].password!==p)return alert('Invalid'); currentUser=e; show('select');}
+function logout(){currentUser=null;show('login')}
+function dashboard(){const u=users()[currentUser]; const active=u?.trialExpire && new Date(u.trialExpire)>new Date(); welcome.textContent='Welcome '+currentUser; status.textContent=active?'Active':'Inactive'; expiry.textContent=active?new Date(u.trialExpire).toLocaleDateString():'--'; msgCount.textContent=u.chatHistory.length;}
+function generateTrial(){let u=users(); const t=new Date(); t.setDate(t.getDate()+1); u[currentUser].trialExpire=t.toISOString(); save(u); dashboard(); alert('Trial activated');}
+function loadChat(){const box=chatBox; box.innerHTML=''; users()[currentUser].chatHistory.forEach(m=>{const d=document.createElement('div'); d.className='msg '+(m.sender==='Bot'?'bot':''); d.textContent=m.sender+': '+m.message; box.appendChild(d)});}
+function sendMsg(){const text=msg.value.trim(); if(!text)return; let u=users(); u[currentUser].chatHistory.push({sender:'You',message:text}); u[currentUser].chatHistory.push({sender:'Bot',message:botReplies[Math.floor(Math.random()*botReplies.length)]+' → '+text}); save(u); msg.value=''; loadChat(); chatBox.scrollTop=chatBox.scrollHeight; dashboard();}
+function renderFiles(){const list=fileList; const arr=[{name:'Neon Toolkit',link:'#'},{name:'AI Assets',link:'#'}]; list.innerHTML=arr.map(f=>`<div class='card'><b>${f.name}</b><div><a href='${f.link}' style='color:#7cecff'>Download</a></div></div>`).join('');}
+function toggleTheme(){document.documentElement.style.setProperty('--accent',Math.random()>.5?'#00e5ff':'#00ff9d');document.documentElement.style.setProperty('--accent2',Math.random()>.5?'#7c4dff':'#ff4df0');}
+setInterval(()=>themeClock.textContent=new Date().toLocaleTimeString(),1000);
+</script>
+</body>
+</html>
